@@ -1,3 +1,5 @@
+## Standalone dashapp that uses DummyData from getDummyData
+
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -33,38 +35,11 @@ app.layout = html.Div([
     
 ])
 
-#### MAKE RANDOM DATA
-
-#printable ASCC is 32 to 126
-from numpy.random import randint as NPrandint
-def randString(len=100):
-    return ''.join([chr(i) for i in NPrandint(32,126,len) ])
-
-xs=[]
-ys=[]
-texts=[]
-customs=[]
-from random import randint
-howMany = 15000
-for i in range(howMany):
-    xs.append( randint(0,1000) )
-    ys.append( randint(0,1000) )
-    texts.append(randString())
-    customs.append('http://lab.e-nable.org?' + str(randint(0,3)))
-colors = ys
-######
-
-
-df = pd.DataFrame({
-    'xs':xs,
-    'ys':ys,
-    'texts':texts,
-    'customs': customs,
-    'colors':colors
-})
+from getDummyData import postData 
+df=postData
 
 """ The populaterizer filters and populates the graph. 
-    It gets its input from 
+    It gets its input from filter
 """               
 @app.callback(
     Output('graph', 'figure'),
@@ -88,7 +63,7 @@ def populaterizer(clicks,value):
                  mode = 'markers',
                  marker = dict(size=8,
                             symbol='square',
-                            color=colors,
+                            color=newdf['colors'],
                             opacity = 0.5)
              )
         ],
