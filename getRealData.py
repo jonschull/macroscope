@@ -5,7 +5,12 @@ from pandas import DataFrame
 def sortByID(t):
     return t['ID']
 
-DFnormPosts = pandas.read_json('normPosts.json')  #read
+try:
+    DFnormPosts = pandas.read_json('../normPosts.json')  #read
+except ValueError:
+    DFnormPosts = pandas.read_json('normPosts.json')  #read
+
+
 JNnormPosts = DFnormPosts.to_dict('records')      #create Jason
 DFnormPosts = DFnormPosts.sort_values('ID')
 JNnormPosts.sort(key=sortByID)
