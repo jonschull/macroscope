@@ -14,6 +14,7 @@ def avatarImg(username=''):
     return f'http://res.cloudinary.com/e-nable-org/image/upload/w_150,r_max/{username}'                         #show it
 
 def getPostsFromThread(ID = 11):
+    print('getPostsFromThread>>>', ID)
     roundvalue = round(ID)
     return [post for post in bodiesDF.to_dict('records') if roundvalue <= float(post['ID']) < roundvalue + 1]
 
@@ -21,7 +22,8 @@ def markdownOfThread(ID=11.3):
     from markdownify import markdownify as md
     RET='\n'
     posts = getPostsFromThread(ID)
-    
+    print('getPostFromThread returned', len(posts), 'items')
+    print('Posts0==', posts[0])
     title = f"""**{posts[0]['body'][:80]}...**
     
 Category:{posts[0]['category']}
@@ -88,7 +90,7 @@ from IPython.display import HTML, display, Markdown
 # In[104]:
 
 
-Markdown(markdownOfThread(11595))
+#Markdown(markdownOfThread(11595))
 
 
 # In[ ]:

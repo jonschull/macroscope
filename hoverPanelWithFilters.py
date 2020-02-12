@@ -34,6 +34,15 @@ body = dbc.Container([
 * **Click** on a data point to view the Thread.
 * **(Soon:) Click on the Participate button** to visit the live thread at [hub.e-nable.org](hub.e-nable.org).
                         """),
+        dcc.Dropdown(
+            id='dropdown',
+            options=[
+                {'label': 'People and and their Posts, Color=Person', 'value': 'PP'},
+                {'label': 'Threads with Comments, inner=Person, outer=Thread', 'value': 'PPT'},
+                {'label': 'New Threads Over Time, Color=Person', 'value': 'TT'}
+            ],
+            value='PP'
+        ),                        
 
 
                         visdcc.Run_js(id = 'javascript'),
@@ -75,22 +84,32 @@ def graphFromRows(newdf):
             title="People and Posts over time, colored by Person",
             xaxis_title="Time",
             yaxis_title="People",
-            height= 800,
+            height= 1200,
             #width=  400
         )
     ) 
 
 
+from GoodThreadsFullData import threadGraph, addRows
+
 @app.callback( Output('graph', 'figure'), 
-              [Input('Cfilter','value')] )
-
-def filter(Cvalue): 
+              [Input('Cfilter','value'),Input('dropdown','value')] 
+             )
+def filter(Cvalue,dropdownValue): 
     Cquery = df.body.str.contains(Cvalue, case=False)         
-    Aquery = df.username.str.contains(Cvalue, case=False)   
-
+    Aquery = df.username.str.contains(Cvalue, case=False)
     newdf=df[Cquery | Aquery]
+
+    if dropdownValue == 'PPT':
+        return threadGraph(addRows(newdf))
+    #(else)
+     
+    if dropdownValue == 'TT':
+        newdf['ys'] = newdf['ID']
     
     return graphFromRows(newdf)
+    
+    
 
 
 from markdownize import markdownOfPost, markdownOfThread, getPostsFromThread
@@ -100,6 +119,7 @@ from markdownize import markdownOfPost, markdownOfThread, getPostsFromThread
     [Input('graph', 'clickData')])
 def updateSpan(clickData):
     if clickData:
+        print(clickData)
         ID = clickData['points'][0]['customdata']
         return markdownOfThread(ID)
 
