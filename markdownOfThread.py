@@ -35,7 +35,6 @@ ___
     return markdown
 
 if __name__=='__main__':
-    
     import pandas as pd
     df = pd.read_json('dump.json')
     df['name'] = [user.replace('(Legacy) ', '') for user in df['user']] 
