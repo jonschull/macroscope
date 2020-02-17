@@ -75,18 +75,18 @@ df['smThreadPos'] = df.threadPos / 1000
 # # ThreadsFig, colored by threadID
 
 # +
-fig = px.scatter(df, x='datetime', y='id', color='IDcolor', size='threadPos', height=800, hover_name='name', opacity=0.4, template='plotly_dark')
-fig.update_layout(showlegend=False, 
-                  title_text='Threads: Posts over Time, Colored by Thread, Sized by Position in Thread')
+fig = px.scatter(df, x='datetime', y='id', hover_data=['id'], color='IDcolor', size='threadPos', height=400, hover_name='name', opacity=0.4, template='plotly_dark')
+fig.update_layout(showlegend=False)
 fig.update_yaxes(title_text='Successive Threads')
 fig.update_xaxes(
      rangeslider=dict(visible=True, thickness=0.02, bgcolor='yellow')  
 )
 
 threadsFig = fig
+fig
 # -
 
-fig
+
 
 # # PeopleFig
 
@@ -94,9 +94,8 @@ fig
 
 
 # +
-fig = px.scatter(df,x='datetime', y='UNN', color='IDcolor',size='smThreadPos', height=800, hover_name='text', opacity=0.3, template='plotly_dark')
-fig.update_layout(showlegend=False, 
-                  title_text='People: Posts over Time, Colored by Thread')
+fig = px.scatter(df,x='datetime', y='UNN', hover_data=['id'], color='IDcolor',size='smThreadPos', height=400, hover_name='text', opacity=0.3, template='plotly_dark')
+fig.update_layout(showlegend=False)
 fig.update_yaxes(title_text='People ordered by first post')
 fig.update_xaxes(
      rangeslider=dict(visible=True, thickness=0.02, bgcolor='yellow')  
@@ -141,9 +140,8 @@ customXaxis=dict(
                    )
 
             
-fig = px.scatter(df, y='UNN', x='id',color='IDcolor', height=800, size='smThreadPos', hover_name='text', opacity=0.3, template='plotly_dark')
-fig.update_layout(showlegend=False, 
-                  title_text="""Horizontal bands are People. Vertical columns of the same color are threads involving multiple people.""",
+fig = px.scatter(df, y='UNN', x='id',hover_data=['id'], color='IDcolor', height=400, size='smThreadPos', hover_name='text', opacity=0.3, template='plotly_dark')
+fig.update_layout(showlegend=False,
                   xaxis = customXaxis
                  )
 fig.update_yaxes(title_text='People ordered by first post')
@@ -155,7 +153,111 @@ bothFig = fig
 
 bothFig
 # -
+# # Dash App! 
+# requires the dash jupyter_lab extension in Jupyter be pip installed and enabled in Extension Mgr
+
+# +
+import jupyterlab_dash #https://github.com/plotly/jupyterlab-dash
+import dash
+import dash_html_components as html
+
+viewer = jupyterlab_dash.AppViewer() #create the viewer once
+# -
+
+
+import dash_bootstrap_components as dbc
+import dash_core_components as dcc
+import visdcc
+
+
+from dash.dependencies import Input, Output, State
+
+# +
+app = dash.Dash(__name__)
+
+
+Cfilter = dcc.Input(id='Cfilter',
+                       placeholder='word or phase...',
+                       type='text',
+                       value=''
+                   )
+
+
+body = dbc.Container([
+        dbc.Row([
+                dbc.Col([  html.H2("Selected Thread"),
+                           dcc.Markdown('selected thread __goes here__', id='HoverBox')],
+                    md=4,
+                ),
+                dbc.Col([   
+                        html.H1('These are data from G+ and Wikifactory.'),
+                        html.Br(),
+                        html.Span('Filter posts by Content or Author:  '),            
+                        Cfilter,
+                        dcc.Markdown("""
+* **Mouse over** a data point to see author and date.
+* **Click** on a data point to view the Thread.
+* **(Soon:) Click on the Participate button** to visit the live thread at [hub.e-nable.org](hub.e-nable.org).
+                        """),
+                    
+                        visdcc.Run_js(id = 'javascript'),
+                        dbc.Row([     dbc.Col([
+                                            html.H1('People'),
+                                            dcc.Graph(id='peopleFig', figure=peopleFig),
+                                            html.P('Horizontal Bands are People. Dots are posts.'),
+
+                                            ]
+                                    ),
+                                            
+                                      dbc.Col([
+                                            html.H1('Threads'),
+                                            dcc.Graph(id='threadFig', figure=threadsFig),
+                                            html.P('Horizontal Bands are Threads. Dots are posts.'),
+
+                                      ]
+                                    )
+                                ]),
+                        
+                        html.H1('People and Threads'),
+                        html.P('Horizontal Banda are People.  Vertical columns of the same color are Threads.'),
+                        dcc.Graph(id='bothFig', figure=bothFig)
+                    ]),
+             ])
+    ],className="mt-4",)
 
 
 
 
+app = dash.Dash(__name__, external_stylesheets=['assets/bootstrap-grid.min'])  ### now uses css in assets dir?
+app.layout = html.Div(body)
+
+
+
+@app.callback(
+    Output('HoverBox' , 'children'),
+    [Input('threadFig', 'clickData'),
+     Input('peopleFig', 'clickData'),
+     Input('bothFig'  , 'clickData')
+    ]
+)
+def updateSpan(tdata, pdata, bdata):
+    print('test')
+    if tdata or pdata or bdata:
+        
+        return f"""
+        tdata {str(tdata)} 
+        
+        
+        pdata {str(pdata)} 
+        
+        
+        bdata {str(bdata)}
+        """
+
+
+viewer.show(app)
+# -
+
+
+
+help(State)
