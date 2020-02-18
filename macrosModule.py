@@ -83,7 +83,7 @@ fig.update_xaxes(
 )
 
 threadsFig = fig
-fig
+#fig
 # -
 
 
@@ -102,7 +102,7 @@ fig.update_xaxes(
 )
 
 peopleFig = fig
-peopleFig
+#peopleFig
 # -
 
 # # bothfig with custom xAxis
@@ -151,18 +151,29 @@ fig.update_xaxes(title_text='Successive Threads over time.',
 
 bothFig = fig
 
-bothFig
+#bothFig
 # -
 # # Dash App! 
 # requires the dash jupyter_lab extension in Jupyter be pip installed and enabled in Extension Mgr
 
-# +
+# # inJupyter?
+# ## when used with the jupytext extension, this is intended to allow me to run 
+# python macrosmodule.py (ipython doen't work because of the extensions own clever check own  )
+# and 
+
 import jupyterlab_dash #https://github.com/plotly/jupyterlab-dash
+#TEMP
+import dash
+app = dash.Dash(__name__)
+
+
+
+
+
+
+
 import dash
 import dash_html_components as html
-
-viewer = jupyterlab_dash.AppViewer() #create the viewer once
-# -
 
 
 import dash_bootstrap_components as dbc
@@ -190,7 +201,7 @@ body = dbc.Container([
                     md=4,
                 ),
                 dbc.Col([   
-                        html.H1('These are data from G+ and Wikifactory.'),
+                        html.H1('These are data from G+ and Wikifactory...'),
                         html.Br(),
                         html.Span('Filter posts by Content or Author:  '),            
                         Cfilter,
@@ -240,24 +251,52 @@ app.layout = html.Div(body)
      Input('bothFig'  , 'clickData')
     ]
 )
-def updateSpan(tdata, pdata, bdata):
-    print('test')
-    if tdata or pdata or bdata:
-        
-        return f"""
-        tdata {str(tdata)} 
-        
-        
-        pdata {str(pdata)} 
-        
-        
-        bdata {str(bdata)}
-        """
 
+
+def updateSpan(tdata, pdata, bdata):
+    ctx = dash.callback_context
+    if ctx.triggered:
+        if ctx.triggered[0]['value']:
+            source =       ctx.triggered[0]['prop_id'].split('.')[0]
+            customdata =   ctx.triggered[0]['value']['points'][0]['customdata'][0]
+            return f"""{source} {customdata} 
+            
+            
+            {markdownOfThread(df, float(customdata))}
+            
+            """
+    return 'nothing yet'
+    
+
+    
+import sys    
+inJupyter = sys.argv[-1].endswith('json')
+print(f'inJupyter: {inJupyter}')
+
+if inJupyter:
+    if not 'viewer' in globals().keys():
+        viewer = jupyterlab_dash.AppViewer() #create the viewer once
+    viewer.show(app)
+else:
+    if __name__ == "__main__":
+        app.run_server(debug=True)
+
+# -
+globals().keys()
+
+
+viewer
 
 viewer.show(app)
-# -
+
+viewer
+
+viewer.terminate()
+
+
+viewer
 
 
 
-help(State)
+
+
