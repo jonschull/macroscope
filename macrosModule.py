@@ -77,10 +77,10 @@ df['smThreadPos'] = df.threadPos / 1000
 # +
 fig = px.scatter(df, x='datetime', y='id', hover_data=['id'], color='IDcolor', size='threadPos', height=400, hover_name='name', opacity=0.4, template='plotly_dark')
 fig.update_layout(showlegend=False)
-fig.update_yaxes(title_text='Successive Threads')
 fig.update_xaxes(
      rangeslider=dict(visible=True, thickness=0.02, bgcolor='yellow')  
 )
+fig.update_yaxes(title_text='Successive Threads', fixedrange=False)
 
 threadsFig = fig
 #fig
@@ -96,10 +96,10 @@ threadsFig = fig
 # +
 fig = px.scatter(df,x='datetime', y='UNN', hover_data=['id'], color='IDcolor',size='smThreadPos', height=400, hover_name='text', opacity=0.3, template='plotly_dark')
 fig.update_layout(showlegend=False)
-fig.update_yaxes(title_text='People ordered by first post')
 fig.update_xaxes(
      rangeslider=dict(visible=True, thickness=0.02, bgcolor='yellow')  
 )
+fig.update_yaxes(title_text='People ordered by first post',  fixedrange=False)
 
 peopleFig = fig
 #peopleFig
@@ -144,10 +144,10 @@ fig = px.scatter(df, y='UNN', x='id',hover_data=['id'], color='IDcolor', height=
 fig.update_layout(showlegend=False,
                   xaxis = customXaxis
                  )
-fig.update_yaxes(title_text='People ordered by first post')
 fig.update_xaxes(title_text='Successive Threads over time.', 
                  rangeslider=dict(visible=True, thickness=0.02, bgcolor='yellow'),
                 )
+fig.update_yaxes(title_text='People ordered by first post', fixedrange=False)
 
 bothFig = fig
 
@@ -207,8 +207,7 @@ body = dbc.Container([
                         Cfilter,
                         dcc.Markdown("""
 * **Mouse over** a data point to see author and date.
-* **Click** on a data point to view the Thread.
-* **(Soon:) Click on the Participate button** to visit the live thread at [hub.e-nable.org](hub.e-nable.org).
+* **Click** on a data point to view the Thread or **>>>Participate** at hub.e-nable.org
                         """),
                     
                         visdcc.Run_js(id = 'javascript'),
@@ -265,7 +264,7 @@ def updateSpan(tdata, pdata, bdata):
             {markdownOfThread(df, float(customdata))}
             
             """
-    return 'nothing yet'
+    return '(click on a data point)'
     
 
     
