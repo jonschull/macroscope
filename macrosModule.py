@@ -226,6 +226,7 @@ viewer = testLayoutInJupyter(leftPanel)
 
 dropDown = dcc.Dropdown(
                         id='dropdown',
+                        style={'color':'#000'},
                         options=[
                             {'label': 'All three graphs', 'value': 'allThree'},                            
                             {'label': 'Just People and Threads over time, Color=Thread', 'value': 'justOne'},
@@ -244,13 +245,13 @@ def twinRow(hide_twinRow=False):
     if hide_twinRow:
         return dbc.Row(children = [ dbc.Col(  style={'display': 'none'}, width=6, children = [ dcc.Graph(id='peopleFig', figure=fullFigs['peopleFig']), ]),
                                 dbc.Col(   style={'display': 'none'}, width=6, children = [ dcc.Graph(id='threadsFig',   figure=fullFigs['threadsFig']) ])], 
-                 id= 'twinRow')
+                 id= 'twinRow', style={'background-color':'#111'})
 
     
     #else
     return dbc.Row(children = [ dbc.Col( width=6, children = [ dcc.Graph(id='peopleFig', figure=fullFigs['peopleFig']), ]),
                                 dbc.Col(width=6, children = [ dcc.Graph(id='threadsFig',   figure=fullFigs['threadsFig']) ])], 
-                 id= 'twinRow')
+                 id= 'twinRow', style={'background-color':'#111'})
 
 viewer = testLayoutInJupyter(twinRow())
 # -
@@ -331,6 +332,7 @@ else:
 
 def rightPanel(hide_twinRow=False):
     return dbc.Col(id='rightPanel',
+                    style={'background-color':'#111', 'color':'#FFF'},
                     width=8,
                     children = [   
                         html.P(id='msgBox', children=''),
@@ -347,7 +349,7 @@ def rightPanel(hide_twinRow=False):
                        dropDown,  
                        html.P(),
                        visdcc.Run_js(id = 'javascript'),
-                       twinRow(hide_twinRow),                      
+                       twinRow(hide_twinRow), 
                        dcc.Graph(id='bothFig', figure=fullFigs['bothFig'])
                     ])
 
