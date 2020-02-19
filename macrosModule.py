@@ -19,7 +19,7 @@
 
 # # code
 
-noFigs=False
+
 
 
 import plotly.express as px
@@ -110,7 +110,7 @@ def makeCustomXaxis(df): #for bothFig
     return customXaxis
 
 
-# ##  makeFigs
+# ##  makeFig, makeFigs
 
 # +
 def makeFig(df, x='datetime', y='UNN', customAxis=False, 
@@ -136,21 +136,32 @@ def makeFig(df, x='datetime', y='UNN', customAxis=False,
                  )
     return fig
 
+def makeFigs(df):
+    """return a dictionary of figs
+    """
 
-peopleFig = makeFig(df, x='datetime', y='UNN', color='IDcolor',
-                        plotTitle='People over time. Colored by Thread',
-                        yTitle = 'People in order of appearance.')
+    figs = OrderedDict() 
 
-threadsFig = makeFig(df, x='datetime', y='id', color='UNNcolor',
-                       plotTitle='Threads over time. Colored by Person',
-                       yTitle = 'Posts in order of appearance')
+    figs['peopleFig'] = makeFig(df, x='datetime', y='UNN', color='IDcolor',
+                            plotTitle='People over time. Colored by Thread',
+                            yTitle = 'People in order of appearance.')
 
-bothFig =  makeFig (df, x='id', y='UNN', customAxis=True,
-                        plotTitle='People over Time. Vertical bands of color are threads',
-                        yTitle = 'People in order of appearance')
+    figs['threadsFig'] = makeFig(df, x='datetime', y='id', color='UNNcolor',
+                           plotTitle='Threads over time. Colored by Person',
+                           yTitle = 'Posts in order of appearance')
 
-#bothFig                    
+    figs['bothFig'] =  makeFig (df, x='id', y='UNN', customAxis=True,
+                            plotTitle='People and Threads over Time. Vertical bands of color are threads',
+                            yTitle = 'People in order of appearance')
+    return figs
+
+fullFigs = makeFigs(df) #these will be global and cooked.
+fullFigs.keys()
 # -
+#
+
+print('GOT HERE')
+
 # # Dash App! 
 # in Jupyter, requires the dash jupyter_lab extension (pip installed and enabled in Extension Mgr)
 
@@ -169,6 +180,8 @@ if inJupyter:
 # -
 
 
+
+
 import dash
 import dash_html_components as html
 import dash_bootstrap_components as dbc
@@ -181,7 +194,7 @@ import visdcc #used for javascript.  Not currently used
 # +
 def testLayoutInJupyter(layout=html.H1('hello')):
     if not inJupyter:
-        exit()
+        return
         
     global viewer
     
@@ -209,31 +222,38 @@ leftPanel = dbc.Col([  html.H2("Selected Thread"),
                 )
 viewer = testLayoutInJupyter(leftPanel)
 
-# +
-#### dropDown
-# -
+# #### dropDown
 
 dropDown = dcc.Dropdown(
                         id='dropdown',
                         options=[
-                            {'label': 'All three graphs', 'value': 'AT'},                            
-                            {'label': 'People and and their Posts, Color=Person', 'value': 'PP'},
-                            {'label': 'Threads with Comments, inner=Person, outer=Thread', 'value': 'PPT'},
-                            {'label': 'New Threads Over Time, Color=Person', 'value': 'TT'}
+                            {'label': 'All three graphs', 'value': 'allThree'},                            
+                            {'label': 'Just People and Threads over time, Color=Thread', 'value': 'justOne'},
                         ],
-                        value='AT'
+                        value='allThree'
                     )
 viewer = testLayoutInJupyter(dropDown)
 
 # #### twinRow 
 # (side by side People and Thread figs)
 
+print('GOT HERE 2')
+
+
 # +
-twinRow= dbc.Row(children = [ dbc.Col(width=6, children = [ dcc.Graph(id='peopleFig', figure=peopleFig), ]),
-                              dbc.Col(width=6, children = [ dcc.Graph(id='threadFig', figure=threadsFig) ])], 
+def twinRow(hide_twinRow=False):
+    if hide_twinRow:
+        return dbc.Row(children = [ dbc.Col(  style={'display': 'none'}, width=6, children = [ dcc.Graph(id='peopleFig', figure=fullFigs['peopleFig']), ]),
+                                dbc.Col(   style={'display': 'none'}, width=6, children = [ dcc.Graph(id='threadsFig',   figure=fullFigs['threadsFig']) ])], 
                  id= 'twinRow')
 
-viewer = testLayoutInJupyter(twinRow)
+    
+    #else
+    return dbc.Row(children = [ dbc.Col( width=6, children = [ dcc.Graph(id='peopleFig', figure=fullFigs['peopleFig']), ]),
+                                dbc.Col(width=6, children = [ dcc.Graph(id='threadsFig',   figure=fullFigs['threadsFig']) ])], 
+                 id= 'twinRow')
+
+viewer = testLayoutInJupyter(twinRow())
 # -
 
 # #### right Panel including Cfilter and TwinRow
@@ -244,8 +264,11 @@ Cfilter = dcc.Input(id='Cfilter',
                        type='text',
                        value='' )
 
-rightPanel = dbc.Col(width=8,
+def rightPanel(hide_twinRow=False):
+    return dbc.Col(id='rightPanel',
+                    width=8,
                     children = [   
+                        html.P(id='msgBox', children=''),
                         html.H1('These are data from G+ and Wikifactory...'),
                         html.Br(),
                         html.Span('Filter posts by Content or Author:  '),            
@@ -256,26 +279,20 @@ rightPanel = dbc.Col(width=8,
                         """),
  
                    
-                       dropDown,                        
+                       dropDown,  
+                       html.P(),
                        visdcc.Run_js(id = 'javascript'),
-                        twinRow,
-                        
-                        html.H1('People and Threads'),
-                        html.P('Horizontal Banda are People.  Vertical columns of the same color are Threads.'),
-                        dcc.Graph(id='bothFig', figure=bothFig)
+                       twinRow(hide_twinRow),                      
+                       dcc.Graph(id='bothFig', figure=fullFigs['bothFig'])
                     ])
 
-testLayoutInJupyter(rightPanel)
+testLayoutInJupyter(rightPanel())
 # -
 # #### both Panels
 
-# +
-bothPanels = dbc.Row([
-                leftPanel,
-                rightPanel ])
 
-testLayoutInJupyter(bothPanels)
-# -
+
+
 
 
 
@@ -285,17 +302,27 @@ testLayoutInJupyter(bothPanels)
 # +
 app = dash.Dash(__name__)
 
-body = bothPanels
-
 app = dash.Dash(__name__, external_stylesheets=['assets/bootstrap-grid.min'])  ### now uses css in assets dir?
 
-app.layout = html.Div(body)
-
+app.layout = dbc.Row([
+                leftPanel,
+                rightPanel(False)])
 
 from dash.dependencies import Input, Output, State
+
+
+@app.callback(
+    Output('twinRow','children'),
+    [Input('dropdown', 'value')]
+)
+def test(dropdown):
+    hide_twinRow = dropdown == 'justOne'
+    return twinRow(hide_twinRow).children
+
+
 @app.callback(
     Output('HoverBox' , 'children'),
-    [Input('threadFig', 'clickData'),
+    [Input('threadsFig', 'clickData'),
      Input('peopleFig', 'clickData'),
      Input('bothFig'  , 'clickData')
     ]
@@ -304,15 +331,17 @@ def updateThreadBox(tdata, pdata, bdata):
     ctx = dash.callback_context
     if ctx.triggered:
         if ctx.triggered[0]['value']:
+            
             source =       ctx.triggered[0]['prop_id'].split('.')[0]
             customdata =   ctx.triggered[0]['value']['points'][0]['customdata'][0]
-            return f"""{source} {customdata} 
             
+            return f"""
             
+            {source} {customdata} 
+                        
             {markdownOfThread(df, float(customdata))}
             
             """
-    return '(click on a data point)'
     
 
 if inJupyter:  #this allows running via python 
