@@ -160,7 +160,7 @@ fullFigs.keys()
 # -
 #
 
-print('GOT HERE')
+
 
 # # Dash App! 
 # in Jupyter, requires the dash jupyter_lab extension (pip installed and enabled in Extension Mgr)
@@ -237,7 +237,6 @@ viewer = testLayoutInJupyter(dropDown)
 # #### twinRow 
 # (side by side People and Thread figs)
 
-print('GOT HERE 2')
 
 
 # +
@@ -258,11 +257,77 @@ viewer = testLayoutInJupyter(twinRow())
 
 # #### right Panel including Cfilter and TwinRow
 
+# #### searchBox
+
 # +
-Cfilter = dcc.Input(id='Cfilter',
-                       placeholder='word or phase...',
+searchBox = html.Div(
+        [html.Span(id='numFound', children=f'{len(df)}'),
+         html.Span(' datapoints...Filter by '),
+         dcc.Input(id='Cfilter',
+                       placeholder='name or phrase...',
                        type='text',
-                       value='' )
+                       value=''),
+          
+          html.Button('Redraw!', id='Redraw!'),
+          html.P(id='searchBoxMessage')
+        ],
+                   id='searchBox'
+                  )
+
+
+viewer = testLayoutInJupyter(searchBox)
+
+# -
+
+len(df[df.name.str.contains('ab', case=False)])
+
+# #### test SearchBox
+
+"""app = dash.Dash(__name__)
+app = dash.Dash(__name__, external_stylesheets=['assets/bootstrap-grid.min'])  ### now uses css in assets dir?
+app.layout= searchBox
+from dash.dependencies import Input, Output, State
+
+
+#SearchBox Callbacks
+@app.callback(
+    Output('searchBoxMessage','children'),
+    [Input('Redraw!', 'n_clicks'),
+     Input('Cfilter','value')]
+)
+def test(redraw, searchPhrase):
+    source='unknown'
+    ctx = dash.callback_context
+    if ctx.triggered:
+        if ctx.triggered[0]['value']:
+            source = ctx.triggered[0]['prop_id'].split('.')[0]
+    if source =='Redraw!':
+        return(searchPhrase)
+    
+
+@app.callback(
+    Output('numFound','children'),  #change 
+    [Input('Cfilter', 'value')]
+)
+def test(searchPhrase):
+    Aquery = df.name.str.contains(searchPhrase, case=False)
+    Cquery = df.body.str.contains(searchPhrase, case=False)         
+    newdf=df[Cquery | Aquery]
+
+    return str(len(newdf))
+
+
+if inJupyter:  #this allows running via python 
+    if not 'viewer' in globals().keys():   #create the viewer once
+        viewer = jupyterlab_dash.AppViewer()
+    viewer.show(app)
+else:
+    if __name__ == "__main__":
+        app.run_server(debug=True)"""
+
+
+
+# +
 
 def rightPanel(hide_twinRow=False):
     return dbc.Col(id='rightPanel',
@@ -272,7 +337,7 @@ def rightPanel(hide_twinRow=False):
                         html.H1('These are data from G+ and Wikifactory...'),
                         html.Br(),
                         html.Span('Filter posts by Content or Author:  '),            
-                        Cfilter,
+                        searchBox,
                         dcc.Markdown("""
 * **Mouse over** a data point to see author and date.
 * **Click** on a data point to view the Thread or **>>>Participate** at hub.e-nable.org
@@ -297,6 +362,8 @@ testLayoutInJupyter(rightPanel())
 
 
 
+len(list(fullFigs.values()))
+
 # ## App with Callbacks
 
 # +
@@ -309,6 +376,69 @@ app.layout = dbc.Row([
                 rightPanel(False)])
 
 from dash.dependencies import Input, Output, State
+
+
+"""
+@app.callback(
+    [Output('peopleFig','figure'),
+     Output('threadsFig','figure'),
+     Output('bothFig','figure')],
+    [Input('Cfilter', 'value')] )
+def filter(Cfilter):
+    Cquery = df.body.str.contains(Cfilter, case=False)         
+    Aquery = df.name.str.contains(Cfilter, case=False)
+    newdf=df[Cquery | Aquery]
+    message = ''
+    numFound = len(newdf)
+    print('found', numFound)
+    if numFound == 0:
+        return list(makeFigs(df).values()) 
+    else:
+        return list(makeFigs(newdf).values()) 
+"""
+
+#####################################
+
+#SearchBox Callbacks
+@app.callback(
+    [Output('peopleFig','figure'),
+     Output('threadsFig','figure'),
+     Output('bothFig','figure')],
+    [Input('Redraw!', 'n_clicks'),
+     Input('Cfilter','value')]
+)
+def test(redraw, searchPhrase):
+    source='unknown'
+    
+    ctx = dash.callback_context
+    if ctx.triggered:
+        if ctx.triggered[0]['value']:
+            source = ctx.triggered[0]['prop_id'].split('.')[0]
+    if source =='Redraw!':
+        Cquery = df.body.str.contains(searchPhrase, case=False)         
+        Aquery = df.name.str.contains(searchPhrase, case=False)
+        newdf=df[Cquery | Aquery]
+        numFound = len(newdf)
+        if numFound == 0:
+            return list(makeFigs(df).values()) 
+        else:
+            return list(makeFigs(newdf).values()) 
+    return [dash.no_update, dash.no_update, dash.no_update] #otherwise, no update
+
+    
+
+@app.callback(
+    Output('numFound','children'),  #change 
+    [Input('Cfilter', 'value')]
+)
+def test(searchPhrase):
+    Aquery = df.name.str.contains(searchPhrase, case=False)
+    Cquery = df.body.str.contains(searchPhrase, case=False)         
+    newdf=df[Cquery | Aquery]
+
+    return str(len(newdf))
+    
+#####################################
 
 
 @app.callback(
