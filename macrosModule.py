@@ -476,11 +476,12 @@ def test(dropdown):
 ####### ThreadBox callBack
 
 @app.callback(
-    Output('HoverBox' , 'children'),
+    [Output('HoverBox' , 'children'),
+     Output('Cfilter',   'value'   )    ],
+    
     [Input('threadsFig', 'clickData'),
      Input('peopleFig', 'clickData'),
-     Input('bothFig'  , 'clickData')
-    ]
+     Input('bothFig'  , 'clickData')     ]
 )
 def updateThreadBox(tdata, pdata, bdata):
     ctx = dash.callback_context
@@ -490,14 +491,15 @@ def updateThreadBox(tdata, pdata, bdata):
             source =       ctx.triggered[0]['prop_id'].split('.')[0]
             customdata =   ctx.triggered[0]['value']['points'][0]['customdata'][0]
             
-            return f"""
-            
-            {source} {customdata} 
+            threadRet = f""" {source} {customdata} 
                         
             {markdownOfThread(df, float(customdata))}
-            
             """
-    
+            
+            queryRet = f'==   {round(customdata)} <= id < {round(customdata+1)}'
+            return [threadRet, queryRet]
+     
+    return [dash.no_update, dash.no_update]
 
 if inJupyter:  #this allows running via python 
     if not 'viewer' in globals().keys():   #create the viewer once
@@ -511,6 +513,10 @@ else:
 
 # !python macrosmodule.py  #you can interrupt kernel
 
-2+2
+n=6.0 
+f'== {round(customdata)} <= id < {{round(customdata+1)}}'
+
+
+intN
 
 
