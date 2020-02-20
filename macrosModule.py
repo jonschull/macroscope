@@ -1,15 +1,17 @@
+# + [markdown]
 # ### Operating principles
+
+# + [markdown]
 # * read in dump.json as mazvy gives it. This will allow him to take responsiblity for updating or appending to dump.json.
 # * Create new columns in dedicated cells; 
 # * do not rewrite or drop original columns (to facilitate bug testing; unless memory becomes a problem)
 #
-
 # ### notes
-# # #! conda install plotly
-# # #! pip install markdownify
-# #to use in jupyter requires the jupyterlab/plotly-extension
+# `conda install plotly
+# pip install markdownify
+# to use in jupyter requires the jupyterlab/plotly-extension
 #
-# `to use jupytext https://jupytext.readthedocs.io/en/latest/examples.html
+# o use jupytext https://jupytext.readthedocs.io/en/latest/examples.html
 #     use the terminals and extensions sidebar to 
 #         pip install the jupytext extension using the extension manager
 #     install juptext
@@ -22,14 +24,12 @@
 # * make a thread-zoomer
 # * when showing only one graph, am I updating all three??
 # * fix: the black backround of the right panel obscures images in the the ThreadBox
-#
 # It looks like "in Jupyter" is inferior to activate-py https://jupytext.readthedocs.io/en/latest/faq.html
 
+# + [markdown]
 # # code
 
-
-
-
+# +
 import plotly.express as px
 import pandas as pd
 
@@ -40,9 +40,10 @@ df['threadY'] = (df.id - round(df.id) * 100000)
 df['name'] = [user.replace('(Legacy) ', '') for user in df['user']] 
 df['text'] = [tup.name + ' ' + str(tup.datetime)[:19] for tup in df.itertuples()] #Jon Schull 2013-07-10 20:01:06
 
+# + [markdown]
+# ### Markdown
 
-# ## Markdown
-
+# +
 from IPython.display import Markdown
 from markdownOfThread import markdownOfThread
 #Markdown(markdownOfThread(df,9))
@@ -58,8 +59,11 @@ df['IDcolor']=round(df['id']%10) #ten discrete colors.
 df['IDcolor'] = df['IDcolor'].astype(str) #needed for discrete colorscale?
 df['threadPos'] = 0.01 + 100*(df.id - round(df.id))  #for sizing.  Grows with the post's position in the thread with a minimum size of 0.01
 
+
+# + [markdown]
+# ### make UniqueNameNumbers
+
 # +
-#make UniqueNameNumbers
 #names = df['user']
 uniqueNames = []
 for name in df.name:
@@ -83,9 +87,10 @@ df['UNNcolor'] = df['UNNcolor'].astype(str)
 df['smThreadPos'] = df.threadPos / 1000
 
 
-# -
+# + [markdown]
 # ## makeCustomXaxis for the bothFig
 
+# +
 def makeCustomXaxis(df): #for bothFig
     df = df.sort_values('datetime')
     #jonrows = df.query('UNN==0')
@@ -120,7 +125,7 @@ def makeCustomXaxis(df): #for bothFig
 
 # ##  makeFig, makeFigs
 
-# +
+# # +
 def makeFig(df, x='datetime', y='UNN', customAxis=False, 
             plotTitle='', yTitle='',color='IDcolor'):
     
@@ -165,17 +170,14 @@ def makeFigs(df):
 
 fullFigs = makeFigs(df) #these will be global and cooked.
 fullFigs.keys()
-# -
-#
 
-
-
+# + [markdown]
 # # Dash App! 
+#
 # in Jupyter, requires the dash jupyter_lab extension (pip installed and enabled in Extension Mgr)
-
+#
 # ## Develop and test Components
-
-# #### in Jupyter?
+#
 
 # +
 import sys    
@@ -185,10 +187,7 @@ print(f'inJupyter: {inJupyter}')
 if inJupyter:
     import jupyterlab_dash #https://github.com/plotly/jupyterlab-dash
 
-# -
-
-
-
+# +
 
 import dash
 import dash_html_components as html
@@ -199,7 +198,7 @@ import visdcc #used for javascript.  Not currently used
 
 # #### layout Tester 
 
-# +
+# # +
 def testLayoutInJupyter(layout=html.H1('hello')):
     if not inJupyter:
         return
@@ -220,18 +219,21 @@ viewer = testLayoutInJupyter()
 #to destroy:
 #viewer.terminate()
 #del(viewer)
-# -
 
-# #### leftPanel
+# + [markdown]
+# ### leftPanel
 
+# +
 leftPanel = dbc.Col([  html.H2("Selected Thread"),
                            dcc.Markdown('selected thread __goes here__', id='HoverBox')],
                     width=3,
                 )
 viewer = testLayoutInJupyter(leftPanel)
 
+# + [markdown]
 # #### dropDown
 
+# +
 dropDown = dcc.Dropdown(
                         id='dropdown',
                         style={'color':'#000'},
@@ -243,10 +245,10 @@ dropDown = dcc.Dropdown(
                     )
 viewer = testLayoutInJupyter(dropDown)
 
-# #### twinRow 
+
+# + [markdown]
+# ### twinRow 
 # (side by side People and Thread figs)
-
-
 
 # +
 def twinRow(hide_twinRow=False):
@@ -262,19 +264,18 @@ def twinRow(hide_twinRow=False):
                  id= 'twinRow', style={'background-color':'#111'})
 
 viewer = testLayoutInJupyter(twinRow())
-# -
 
-# #### right Panel including Cfilter and TwinRow
-
-# #### searchBox
+# + [markdown]
+# ### Searchbox
 
 # +
 searchBox = html.Div(
         [html.Span(id='numFound', children=f'{len(df)}'),
          html.Span(' datapoints...Filter by '),
          dcc.Input(id='Cfilter',
-                       placeholder='name or phrase...',
+                       placeholder='name or phrase, or query like ==id>10000',
                        type='text',
+                       size = '40',
                        value=''),
           
           html.Button('Redraw!', id='Redraw!'),
@@ -286,16 +287,36 @@ searchBox = html.Div(
 
 viewer = testLayoutInJupyter(searchBox)
 
-# -
 
-len(df[df.name.str.contains('ab', case=False)])
-
+# + [markdown]
 # #### test SearchBox
 
-"""app = dash.Dash(__name__)
+# +
+def queryResponse(queryPhrase='6<id<7'):
+    testerdf =   df.head(1)     
+    Error=''
+    
+    try:
+        testerdf.query(queryPhrase)
+    except  Exception:
+        Error = '[Bad Query]'
+        return Error, None
+
+    if not Error:
+        newdf = df.query(queryPhrase)
+        return str(len(newdf)), newdf
+    
+queryResponse('6<id<8')[0]
+
+# +
+"""
+app = dash.Dash(__name__)
 app = dash.Dash(__name__, external_stylesheets=['assets/bootstrap-grid.min'])  ### now uses css in assets dir?
-app.layout= searchBox
 from dash.dependencies import Input, Output, State
+
+print('testing queryBox')
+app.layout= searchBox
+
 
 
 #SearchBox Callbacks
@@ -304,7 +325,7 @@ from dash.dependencies import Input, Output, State
     [Input('Redraw!', 'n_clicks'),
      Input('Cfilter','value')]
 )
-def test(redraw, searchPhrase):
+def updateFigures(redraw, searchPhrase):
     source='unknown'
     ctx = dash.callback_context
     if ctx.triggered:
@@ -313,17 +334,21 @@ def test(redraw, searchPhrase):
     if source =='Redraw!':
         return(searchPhrase)
     
-
+testerdf=df.head(1)
+    
 @app.callback(
     Output('numFound','children'),  #change 
     [Input('Cfilter', 'value')]
 )
-def test(searchPhrase):
-    Aquery = df.name.str.contains(searchPhrase, case=False)
-    Cquery = df.body.str.contains(searchPhrase, case=False)         
-    newdf=df[Cquery | Aquery]
-
-    return str(len(newdf))
+def updateNumFound(searchPhrase):
+    if searchPhrase.startswith('=='):
+        queryPhrase = searchPhrase[2:]
+        return f'{queryPhrase} =>> {queryResponse(queryPhrase)[0]}'
+    else:
+        Aquery = df.name.str.contains(searchPhrase, case=False)
+        Cquery = df.body.str.contains(searchPhrase, case=False)         
+        newdf=df[Cquery | Aquery]
+        return str(len(newdf))
 
 
 if inJupyter:  #this allows running via python 
@@ -332,12 +357,15 @@ if inJupyter:  #this allows running via python
     viewer.show(app)
 else:
     if __name__ == "__main__":
-        app.run_server(debug=True)"""
+        app.run_server(debug=True)
+"""
 
 
+# -
+
+# ### right panel
 
 # +
-
 def rightPanel(hide_twinRow=False):
     return dbc.Col(id='rightPanel',
                     style={'background-color':'#111', 'color':'#FFF'},
@@ -361,18 +389,11 @@ def rightPanel(hide_twinRow=False):
                     ])
 
 testLayoutInJupyter(rightPanel())
-# -
-# #### both Panels
 
+# + [markdown]
+# ### both Panels
 
-
-
-
-
-
-
-len(list(fullFigs.values()))
-
+# + [markdown]
 # ## App with Callbacks
 
 # +
@@ -386,29 +407,9 @@ app.layout = dbc.Container(dbc.Row([
 
 from dash.dependencies import Input, Output, State
 
-
-"""
-@app.callback(
-    [Output('peopleFig','figure'),
-     Output('threadsFig','figure'),
-     Output('bothFig','figure')],
-    [Input('Cfilter', 'value')] )
-def filter(Cfilter):
-    Cquery = df.body.str.contains(Cfilter, case=False)         
-    Aquery = df.name.str.contains(Cfilter, case=False)
-    newdf=df[Cquery | Aquery]
-    message = ''
-    numFound = len(newdf)
-    print('found', numFound)
-    if numFound == 0:
-        return list(makeFigs(df).values()) 
-    else:
-        return list(makeFigs(newdf).values()) 
-"""
-
-#####################################
-
+######################################
 #SearchBox Callbacks
+####### update Figures with when ........ Redraw!
 @app.callback(
     [Output('peopleFig','figure'),
      Output('threadsFig','figure'),
@@ -416,40 +417,53 @@ def filter(Cfilter):
     [Input('Redraw!', 'n_clicks'),
      Input('Cfilter','value')]
 )
-def test(redraw, searchPhrase):
+def updateFigures(redraw, searchPhrase):
     source='unknown'
     
     ctx = dash.callback_context
     if ctx.triggered:
         if ctx.triggered[0]['value']:
             source = ctx.triggered[0]['prop_id'].split('.')[0]
+
     if source =='Redraw!':
-        Cquery = df.body.str.contains(searchPhrase, case=False)         
-        Aquery = df.name.str.contains(searchPhrase, case=False)
-        newdf=df[Cquery | Aquery]
+        #first get newdf
+        if searchPhrase.startswith('=='):
+            queryPhrase = searchPhrase[2:]
+            newdf = queryResponse(queryPhrase)[1]
+        else:
+            Cquery = df.body.str.contains(searchPhrase, case=False)         
+            Aquery = df.name.str.contains(searchPhrase, case=False)
+            newdf=df[Cquery | Aquery]
+
+        #then redraw
         numFound = len(newdf)
         if numFound == 0:
             return list(makeFigs(df).values()) 
         else:
             return list(makeFigs(newdf).values()) 
+        
     return [dash.no_update, dash.no_update, dash.no_update] #otherwise, no update
 
-    
 
+################################
+##### UpdateNumFound with query
 @app.callback(
     Output('numFound','children'),  #change 
     [Input('Cfilter', 'value')]
 )
-def test(searchPhrase):
+def updateNumFound(searchPhrase):
+    if searchPhrase.startswith('=='):
+        queryPhrase = searchPhrase[2:]
+        return f'{queryPhrase} =>> {queryResponse(queryPhrase)[0]}'
+
     Aquery = df.name.str.contains(searchPhrase, case=False)
     Cquery = df.body.str.contains(searchPhrase, case=False)         
     newdf=df[Cquery | Aquery]
 
     return str(len(newdf))
-    
-#####################################
 
-
+################################
+####### Dropdown Callback
 @app.callback(
     Output('twinRow','children'),
     [Input('dropdown', 'value')]
@@ -458,6 +472,8 @@ def test(dropdown):
     hide_twinRow = dropdown == 'justOne'
     return twinRow(hide_twinRow).children
 
+################################
+####### ThreadBox callBack
 
 @app.callback(
     Output('HoverBox' , 'children'),
@@ -492,5 +508,9 @@ else:
         app.run_server(debug=True)
 
 # -
+
+# !python macrosmodule.py  #you can interrupt kernel
+
+2+2
 
 
