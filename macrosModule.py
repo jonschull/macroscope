@@ -15,7 +15,15 @@
 #     install juptext
 #         use the terminals and extensions sidebar to pair your ipynb with a light script`
 #     
+#     
+# TODO: 
+# * search body text, not body.html
+# * workwith mazvy on updating and avatar images
+# * make a thread-zoomer
+# * when showing only one graph, am I updating all three??
+# * fix: the black backround of the right panel obscures images in the the ThreadBox
 #
+# It looks like "in Jupyter" is inferior to activate-py https://jupytext.readthedocs.io/en/latest/faq.html
 
 # # code
 
@@ -336,9 +344,8 @@ def rightPanel(hide_twinRow=False):
                     width=8,
                     children = [   
                         html.P(id='msgBox', children=''),
-                        html.H1('These are data from G+ and Wikifactory...'),
+                        html.H2('These are data from G+ and Wikifactory...'),
                         html.Br(),
-                        html.Span('Filter posts by Content or Author:  '),            
                         searchBox,
                         dcc.Markdown("""
 * **Mouse over** a data point to see author and date.
@@ -373,9 +380,9 @@ app = dash.Dash(__name__)
 
 app = dash.Dash(__name__, external_stylesheets=['assets/bootstrap-grid.min'])  ### now uses css in assets dir?
 
-app.layout = dbc.Row([
+app.layout = dbc.Container(dbc.Row([
                 leftPanel,
-                rightPanel(False)])
+                rightPanel(False)]))
 
 from dash.dependencies import Input, Output, State
 
