@@ -8,8 +8,6 @@ def getPostsFromThread(df, ID = 11):
 
 
 
-
-
 # +
 def markdownOfThread(df, ID=11.3):
     from markdownify import markdownify as md
@@ -21,9 +19,10 @@ def markdownOfThread(df, ID=11.3):
     
     title = f"""**{posts[0]['body'][:80]}...**
     
-Category:{posts[0]['topics']}
+Category:{str(posts[0]['topics'])}
 
-{str(posts[0]['datetime'])[:-15]} | {str(posts[0]['datetime'])[11:16]}  **[>>>Hub.e-nable.org]({posts[0]['permalink']})**
+{str(posts[0]['datetime'])[:-15]} | {str(posts[0]['datetime'])[11:16]} 
+
 ___
 """
             
@@ -47,7 +46,7 @@ ___
 import sys
 inJupyter = sys.argv[-1].endswith('json')
 print(f'inJupyter: {inJupyter}')
-if inJupyter:
+if __name__=='__main__' and inJupyter:
     import pandas as pd
     df = pd.read_json('dump.json')
     df['name'] = [user.replace('(Legacy) ', '') for user in df['user']] 
@@ -55,17 +54,5 @@ if inJupyter:
 
     from IPython.display import Markdown, display
     display(Markdown(markdownOfThread(df, 6)))
-# -
-
-if __name__=='__main__':
-    import pandas as pd
-    df = pd.read_json('dump.json')
-    df['name'] = [user.replace('(Legacy) ', '') for user in df['user']] 
-
-
-    from IPython.display import Markdown, display
-    display(Markdown(markdownOfThread(df, 6)))
-
-
 
 

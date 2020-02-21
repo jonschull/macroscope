@@ -11,15 +11,17 @@
 # pip install markdownify
 # to use in jupyter requires the jupyterlab/plotly-extension
 #
-# o use jupytext https://jupytext.readthedocs.io/en/latest/examples.html
+# * use jupytext https://jupytext.readthedocs.io/en/latest/examples.html
 #     use the terminals and extensions sidebar to 
 #         pip install the jupytext extension using the extension manager
 #     install juptext
 #         use the terminals and extensions sidebar to pair your ipynb with a light script`
 #     
+# If a script is edited outside of jupyter, jupytext loses formatting when using light scripts.  ==> Use % scripts.
+#     
 #     
 # TODO: 
-# * workwith mazvy on updating and avatar images
+# * work with mazvy on updating avatar images / ProfilePictures
 # * when showing only one graph, am I updating all three??
 #     YES.  Could optimize by saving full graph in browser and by updating only the visible graph
 #
@@ -226,7 +228,10 @@ viewer = testLayoutInJupyter()
 
 # %%
 leftPanel = dbc.Col([  html.H2("Selected Thread"),
-                           dcc.Markdown('selected thread __goes here__', id='HoverBox')],
+                           html.A('>>>Hub<<<<', 
+                                  id='linkToHub',
+                                  href='https://hub.e-nable.org'),
+                           dcc.Markdown('selected thread goes here', id='threadBox')],
                     width=3,
                     style={'overflowY': 'scroll', 'height': 1200}
                 )
@@ -381,8 +386,7 @@ def rightPanel(hide_twinRow=False):
                         searchBox,
                         dcc.Markdown("""
 * **Mouse over** a data point to see author and date.
-* **Click** on a data point to view the Thread or **>>>Participate** at hub.e-nable.org
-                        """),
+* **Click** on a data point to view the Thread in the **Selected Thread** Panel"""),
                        dropDown,  
                        #html.P(),
                        visdcc.Run_js(id = 'javascript'),
@@ -478,9 +482,12 @@ def test(dropdown):
 ################################
 ####### ThreadBox callBack
 
+
+
 @app.callback(
-    [Output('HoverBox' , 'children'),
-     Output('Cfilter',   'value'   )    ],
+    [Output('threadBox' , 'children'),
+     Output('Cfilter',   'value'    ),
+     Output('linkToHub', 'children' )],
     
     [Input('threadsFig', 'clickData'),
      Input('peopleFig', 'clickData'),
@@ -494,15 +501,20 @@ def updateThreadBox(tdata, pdata, bdata):
             source =       ctx.triggered[0]['prop_id'].split('.')[0]
             customdata =   ctx.triggered[0]['value']['points'][0]['customdata'][0]
             
-            threadRet = f""" {source} {customdata} 
-                        
+            threadRet = f"""
             {markdownOfThread(df, float(customdata))}
             """
             
             queryRet = f'==   {round(customdata)} <= id < {round(customdata+1)}'
-            return [threadRet, queryRet]
+            
+            df.query(f'id=={round(customdata)}')
+        
+            URL = list(df.query(f'id=={round(customdata)}').permalink)[0]         
+            linkToHub = html.A(f'>>>hub.e-nable.org<<<<', href=URL, target='_hub'),
+            
+            return [threadRet, queryRet, linkToHub]
      
-    return [dash.no_update, dash.no_update]
+    return ['', '','']
 
 if inJupyter:  #this allows running via python 
     if not 'viewer' in globals().keys():   #create the viewer once
@@ -514,7 +526,10 @@ else:
 
 
 # %%
-# !python macrosmodule.py  #you can interrupt kernel to stop
+df.columns
+
+# %%
+# #!python macrosmodule.py  #you can interrupt kernel to stop
 
 # %%
 
