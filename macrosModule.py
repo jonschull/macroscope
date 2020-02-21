@@ -19,12 +19,10 @@
 #     
 #     
 # TODO: 
-# * search body text, not body.html
 # * workwith mazvy on updating and avatar images
-# * make a thread-zoomer
 # * when showing only one graph, am I updating all three??
-# * fix: the black backround of the right panel obscures images in the the ThreadBox
-# It looks like "in Jupyter" is inferior to activate-py https://jupytext.readthedocs.io/en/latest/faq.html
+#     YES.  Could optimize by saving full graph in browser and by updating only the visible graph
+#
 
 # + [markdown]
 # # code
@@ -130,12 +128,14 @@ def makeFig(df, x='datetime', y='UNN', customAxis=False,
             plotTitle='', yTitle='',color='IDcolor'):
     
     fig = px.scatter(df,x=x, y=y, hover_data=['id'], 
-                     color= color,
-                     size='smThreadPos', 
+                     color= color, size='smThreadPos', 
                      height=400, hover_name='text',
-                     opacity=0.3, template='plotly_dark')
+                     opacity=0.3, template='plotly_dark',
+                    )
     
-    fig.update_layout(showlegend=False, title=plotTitle)
+    fig.update_layout(showlegend=False, 
+                      title=plotTitle,
+                     )
     
     fig.update_xaxes(
          rangeslider=dict(visible=True, thickness=0.02, bgcolor='yellow')  )
@@ -145,8 +145,7 @@ def makeFig(df, x='datetime', y='UNN', customAxis=False,
     if customAxis:
         fig.update_xaxes(title_text = 'Successive Threads over Time')
         fig.update_layout(showlegend=False,
-                  xaxis = makeCustomXaxis(df)
-                 )
+                          xaxis = makeCustomXaxis(df) )
     return fig
 
 def makeFigs(df):
@@ -163,13 +162,16 @@ def makeFigs(df):
                            plotTitle='Threads over time. Colored by Person',
                            yTitle = 'Posts in order of appearance')
 
-    figs['bothFig'] =  makeFig (df, x='id', y='UNN', customAxis=True,
-                            plotTitle='People and Threads over Time. Vertical bands of color are threads',
+    figs['bothFig'] =  makeFig (df, x='id', y='UNN', customAxis=True, color='UNNcolor',
+                            plotTitle='People and Threads over Time. Colored by Person',
                             yTitle = 'People in order of appearance')
     return figs
 
 fullFigs = makeFigs(df) #these will be global and cooked.
 fullFigs.keys()
+# -
+
+
 
 # + [markdown]
 # # Dash App! 
@@ -227,6 +229,7 @@ viewer = testLayoutInJupyter()
 leftPanel = dbc.Col([  html.H2("Selected Thread"),
                            dcc.Markdown('selected thread __goes here__', id='HoverBox')],
                     width=3,
+                    style={'overflowY': 'scroll', 'height': 1200}
                 )
 viewer = testLayoutInJupyter(leftPanel)
 
@@ -255,13 +258,13 @@ def twinRow(hide_twinRow=False):
     if hide_twinRow:
         return dbc.Row(children = [ dbc.Col(  style={'display': 'none'}, width=6, children = [ dcc.Graph(id='peopleFig', figure=fullFigs['peopleFig']), ]),
                                 dbc.Col(   style={'display': 'none'}, width=6, children = [ dcc.Graph(id='threadsFig',   figure=fullFigs['threadsFig']) ])], 
-                 id= 'twinRow', style={'background-color':'#111'})
+                 id= 'twinRow', style={'background-color':'#111'}, no_gutters= True )
 
     
     #else
     return dbc.Row(children = [ dbc.Col( width=6, children = [ dcc.Graph(id='peopleFig', figure=fullFigs['peopleFig']), ]),
                                 dbc.Col(width=6, children = [ dcc.Graph(id='threadsFig',   figure=fullFigs['threadsFig']) ])], 
-                 id= 'twinRow', style={'background-color':'#111'})
+                 id= 'twinRow', style={'background-color':'#111'},  no_gutters= True )
 
 viewer = testLayoutInJupyter(twinRow())
 
@@ -271,11 +274,13 @@ viewer = testLayoutInJupyter(twinRow())
 # +
 searchBox = html.Div(
         [html.Span(id='numFound', children=f'{len(df)}'),
-         html.Span(' datapoints...Filter by '),
+         html.Span(' datapoints'),
+         html.Br(),
+         html.Span('Filter by '),
          dcc.Input(id='Cfilter',
-                       placeholder='name or phrase, or query like ==id>10000',
+                       placeholder='name or phrase, or query like == threadID>10000',
                        type='text',
-                       size = '40',
+                       size = '50',
                        value=''),
           
           html.Button('Redraw!', id='Redraw!'),
@@ -308,58 +313,8 @@ def queryResponse(queryPhrase='6<id<7'):
     
 queryResponse('6<id<8')[0]
 
+
 # +
-"""
-app = dash.Dash(__name__)
-app = dash.Dash(__name__, external_stylesheets=['assets/bootstrap-grid.min'])  ### now uses css in assets dir?
-from dash.dependencies import Input, Output, State
-
-print('testing queryBox')
-app.layout= searchBox
-
-
-
-#SearchBox Callbacks
-@app.callback(
-    Output('searchBoxMessage','children'),
-    [Input('Redraw!', 'n_clicks'),
-     Input('Cfilter','value')]
-)
-def updateFigures(redraw, searchPhrase):
-    source='unknown'
-    ctx = dash.callback_context
-    if ctx.triggered:
-        if ctx.triggered[0]['value']:
-            source = ctx.triggered[0]['prop_id'].split('.')[0]
-    if source =='Redraw!':
-        return(searchPhrase)
-    
-testerdf=df.head(1)
-    
-@app.callback(
-    Output('numFound','children'),  #change 
-    [Input('Cfilter', 'value')]
-)
-def updateNumFound(searchPhrase):
-    if searchPhrase.startswith('=='):
-        queryPhrase = searchPhrase[2:]
-        return f'{queryPhrase} =>> {queryResponse(queryPhrase)[0]}'
-    else:
-        Aquery = df.name.str.contains(searchPhrase, case=False)
-        Cquery = df.body.str.contains(searchPhrase, case=False)         
-        newdf=df[Cquery | Aquery]
-        return str(len(newdf))
-
-
-if inJupyter:  #this allows running via python 
-    if not 'viewer' in globals().keys():   #create the viewer once
-        viewer = jupyterlab_dash.AppViewer()
-    viewer.show(app)
-else:
-    if __name__ == "__main__":
-        app.run_server(debug=True)
-"""
-
 
 # -
 
@@ -369,24 +324,24 @@ else:
 def rightPanel(hide_twinRow=False):
     return dbc.Col(id='rightPanel',
                     style={'background-color':'#111', 'color':'#FFF'},
-                    width=8,
+                    width=9,
                     children = [   
                         html.P(id='msgBox', children=''),
-                        html.H2('These are data from G+ and Wikifactory...'),
+                        html.H3('e-NABLE on G+, Wikifactory, and hub.e-NABLE.org...'),
                         html.Br(),
                         searchBox,
                         dcc.Markdown("""
 * **Mouse over** a data point to see author and date.
 * **Click** on a data point to view the Thread or **>>>Participate** at hub.e-nable.org
                         """),
- 
-                   
                        dropDown,  
-                       html.P(),
+                       #html.P(),
                        visdcc.Run_js(id = 'javascript'),
                        twinRow(hide_twinRow), 
-                       dcc.Graph(id='bothFig', figure=fullFigs['bothFig'])
-                    ])
+                       dcc.Graph(id='bothFig', figure=fullFigs['bothFig'],
+                       style={'background-color':'#111'}
+                   ) 
+                ])
 
 testLayoutInJupyter(rightPanel())
 
@@ -403,7 +358,7 @@ app = dash.Dash(__name__, external_stylesheets=['assets/bootstrap-grid.min'])  #
 
 app.layout = dbc.Container(dbc.Row([
                 leftPanel,
-                rightPanel(False)]))
+                rightPanel(False)]), fluid=True)
 
 from dash.dependencies import Input, Output, State
 
@@ -443,7 +398,6 @@ def updateFigures(redraw, searchPhrase):
             return list(makeFigs(newdf).values()) 
         
     return [dash.no_update, dash.no_update, dash.no_update] #otherwise, no update
-
 
 ################################
 ##### UpdateNumFound with query
@@ -511,12 +465,10 @@ else:
 
 # -
 
-# !python macrosmodule.py  #you can interrupt kernel
-
-n=6.0 
-f'== {round(customdata)} <= id < {{round(customdata+1)}}'
+# !python macrosmodule.py  #you can interrupt kernel to stop
 
 
-intN
+
+
 
 
